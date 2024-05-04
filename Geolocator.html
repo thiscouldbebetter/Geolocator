@@ -8,21 +8,129 @@
 	<p>
 		The code on this page reads the computer's
 		latitude and longitude from the browser,
-		if supported, and displays it.
+		if supported, and displays it. 
+		Click the Refresh button to see if location has changed.
+		Click the Record button to output the location
+		as text with a timestamp.
 	</p>
 
 	<div>
-		<label>Latitude:</label>
-		<input id="inputLatitude" readonly="true"></input>
+		<div>
+			<label>Latitude:</label>
+			<input id="inputLatitude" readonly="true"></input>
+			<label>°</label>
+		</div>
 
-		<label>Longitude:</label>
-		<input id="inputLongitude" readonly="true"></input>
+		<div>
+			<label>Longitude:</label>
+			<input id="inputLongitude" readonly="true"></input>
+			<label>°</label>
+		</div>
+
+		<div style="display:none">
+			<label>Accuracy of Lat./Lon.:</label>
+			<input id="inputAccuracyOfLatLon" readonly="true"></input>
+			<label>m @ 95% confidence</label>
+		</div>
+
+		<div>
+			<label>Altitude:</label>
+			<input id="inputAltitude" readonly="true"></input>
+			<label>m</label>
+		</div>
+
+		<div>
+			<label>Time:</label>
+			<input id="inputTime" readonly="true" style="width:400px"></input>
+		</div>
+
+		<div>
+			<button onclick="buttonRefresh_Clicked()">Refresh</button>
+		</div>
+
+		<div>
+			<button onclick="buttonRecord_Clicked()">Record</button>
+			<label>with note:</label>
+			<input id="inputNote"></input>
+			<button onclick="buttonNoteClear_Clicked()">Clear</button>
+		</div>
+
+		<div>
+			<label>Locations Recorded:</label>
+			<br />
+			<textarea
+				id="textareaLocationsRecorded"
+				cols="80" rows="25"
+			></textarea>
+		</div>
 
 	</div>
 
 </div>
 
 <script type="text/javascript">
+
+// UI event handlers.
+
+function buttonNoteClear_Clicked()
+{
+	var inputNote =
+		d.getElementById("inputNote");
+	inputNote.value = "";
+}
+
+function buttonRecord_Clicked()
+{
+	var d = document;
+
+	var inputLatitude =
+		d.getElementById("inputLatitude");
+	var inputLongitude =
+		d.getElementById("inputLongitude");
+	var inputAccuracyOfLatLon =
+		d.getElementById("inputAccuracyOfLatLon");
+	var inputAltitude =
+		d.getElementById("inputAltitude");
+	var inputTime =
+		d.getElementById("inputTime");
+	var inputNote =
+		d.getElementById("inputNote");
+
+	var time = inputTime.time;
+	var latitude = parseFloat(inputLatitude.value);
+	var longitude = parseFloat(inputLongitude.value);
+	var accuracyOfLatLon = parseFloat(inputAccuracyOfLatLon.value);
+	var altitude = parseFloat(inputAltitude.value);
+	if (isNaN(altitude) )
+	{
+		altitude = "?"
+	}
+	var note = inputNote.value;
+
+	var locationToRecord = new LocationRecord
+	(
+		latitude, longitude, accuracyOfLatLon, altitude, time, note
+	);
+
+	var locationToRecordAsString =
+		locationToRecord.toString();
+
+	var textareaLocationsRecorded =
+		d.getElementById("textareaLocationsRecorded");
+
+	var newline = "\n";
+
+	textareaLocationsRecorded.value +=
+		newline + locationToRecordAsString;
+}
+
+function buttonRefresh_Clicked()
+{
+	Geolocator.domElementUpdate();
+}
+
+
+// Classes.
 
 class Geolocator
 {
@@ -33,7 +141,13 @@ class Geolocator
 		var inputLatitude =
 			d.getElementById("inputLatitude");
 		var inputLongitude =
-				d.getElementById("inputLongitude");
+			d.getElementById("inputLongitude");
+		var inputAccuracyOfLatLon =
+			d.getElementById("inputAccuracyOfLatLon");
+		var inputAltitude =
+			d.getElementById("inputAltitude");
+		var inputTime =
+			d.getElementById("inputTime");
 
 		var geolocation = navigator.geolocation;
 
@@ -42,20 +156,65 @@ class Geolocator
 			var textNotSupported = "[not supported]";
 			inputLatitude.value = textNotSupported;
 			inputLongitude.value = textNotSupported;
+			inputAccuracyOfLatLon.value = textNotSupported;
+			inputAltitude.value = textNotSupported;
+			inputTime.value = textNotSupported;
+			inputTime.time = null;
 		}
 		else
 		{
 			geolocation.getCurrentPosition
 			(
-				(position) =>
+				(position) => // success
 				{
 					var coords = position.coords;
+					var time = new Date();
 
 					inputLatitude.value = coords.latitude;
 					inputLongitude.value = coords.longitude;
+					inputAccuracyOfLatLon.value = coords.accuracy;
+					inputAltitude.value =
+						coords.altitude == null
+						? "?"
+						: coords.altitude;
+					inputTime.value = time.toISOString();
+					inputTime.time = time;
+				},
+
+				// error
+				() => alert("Geolocation.getCurrentPosition() failed!"),
+
+				// options
+				{
+					enableHighAccuracy: true
 				}
 			);
 		}
+	}
+}
+
+class LocationRecord
+{
+	constructor(latitude, longitude, accuracyOfLatLon, altitude, time, note)
+	{
+		this.latitude = latitude;
+		this.longitude = longitude;
+		this.accuracyOfLatLon = accuracyOfLatLon;
+		this.altitude = altitude;
+		this.time = time || new Date();
+		this.note = note;
+	}
+
+	toString()
+	{
+		var returnValue =
+			this.latitude + "° x "
+			+ this.longitude + "° + "
+			+ this.altitude + "m @ "
+			+ this.time.toISOString() 
+			+ (this.note == null || this.note == "" ? "" : ": " + this.note);
+
+		return returnValue;
 	}
 }
 
