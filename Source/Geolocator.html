@@ -16,6 +16,11 @@
 
 	<div>
 		<div>
+			<label>Status:</label>
+			<label id="labelStatus">[none]</label>
+		</div>
+
+		<div>
 			<label>Latitude:</label>
 			<input id="inputLatitude" readonly="true"></input>
 			<label>°</label>
@@ -182,7 +187,14 @@ class Geolocator
 				},
 
 				// error
-				() => alert("Geolocation.getCurrentPosition() failed!"),
+				() =>
+				{
+					var errorMessage =
+						"Geolocation.getCurrentPosition() failed!";
+					var labelStatus =
+						d.getElementById("labelStatus");
+					labelStatus.innerText = errorMessage;
+				},
 
 				// options
 				{
@@ -195,7 +207,15 @@ class Geolocator
 
 class LocationRecord
 {
-	constructor(latitude, longitude, accuracyOfLatLon, altitude, time, note)
+	constructor
+	(
+		latitude,
+		longitude,
+		accuracyOfLatLon,
+		altitude,
+		time,
+		note
+	)
 	{
 		this.latitude = latitude;
 		this.longitude = longitude;
